@@ -66,6 +66,12 @@ eurusd-lstm-dashboard/
 ##  Notes
 - You must have **MetaTrader 5** installed and logged in for live data.
 
+  - ##  Download Trained Model & Sample Output
+
+-  [Download LSTM Model (lstm_model.pth)](https://drive.google.com/file/d/1iSGmTpPAHGFQ5bQv5sYDWfm7taH3lrHX/view?usp=sharing)
+-  [Sample Prediction Output (prediction_results.json)](https://drive.google.com/file/d/1Cq32b9Y2AO8F_u57Rt4Pnsp7IzZNnoPj/view?usp=drive_link)
+
+
 ---
 
 ##  Credits
