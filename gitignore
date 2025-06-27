@@ -1,0 +1,20 @@
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+
+# Ignore model file and outputs
+lstm_model.pth
+prediction_results.json
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE/workspace settings
+.vscode/
+.idea/
+
+# Ignore environment files
+.env
+.venv/
+venv/
