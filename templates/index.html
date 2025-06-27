@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EURUSD LSTM Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      resize: both;
+      overflow: auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 1000px;
+      min-width: 300px;
+      min-height: 300px;
+    }
+    .controls {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .controls input[type="color"] {
+      margin: 0 10px;
+    }
+    canvas {
+      max-width: 100%;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      background-color: #0066cc;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004999;
+    }
+    .prediction {
+      font-size: 1.2em;
+      color: #0066cc;
+      margin: 10px 0 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>EURUSD LSTM Dashboard</h1>
+    <div class="prediction" id="summary">Loading prediction...</div>
+    <div class="controls">
+      <button onclick="fetchPrediction()">Refresh Now</button>
+      <button onclick="toggleBullets()">Toggle Points</button><br><br>
+      <label>True Color: <input type="color" id="trueColor" value="#008000" onchange="updateColors()"></label>
+      <label>Predicted Color: <input type="color" id="predColor" value="#0000ff" onchange="updateColors()"></label>
+    </div>
+    <canvas id="priceChart"></canvas>
+    <canvas id="changeChart"></canvas>
+  </div>
+
+  <script>
+    let priceChart, changeChart;
+    let showBullets = true;
+
+    function fetchPrediction() {
+      document.getElementById('summary').innerText = "Loading...";
+      fetch('/predict')
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            document.getElementById('summary').innerText = "Prediction failed.";
+            return;
+          }
+
+          const predicted = data.predicted_prices;
+          const actual = data.true_prices;
+          const percent = data.percent_change.toFixed(5);
+          const direction = percent > 0 ? "📈 BUY Signal" : "📉 SELL Signal";
+          document.getElementById('summary').innerText = `Next % Change: ${percent}% — ${direction}`;
+
+          const now = new Date();
+          const labels = Array.from({length: predicted.length}, (_, i) => {
+            const t = new Date(now - (predicted.length - i) * 15 * 60 * 1000);
+            return t.toISOString().slice(0, 16).replace('T', ' ');
+          });
+
+          const trueColor = document.getElementById("trueColor").value;
+          const predColor = document.getElementById("predColor").value;
+
+          const priceData = {
+            labels: labels,
+            datasets: [
+              {
+                label: 'True Prices (Normalized)',
+                data: actual,
+                borderColor: trueColor,
+                backgroundColor: trueColor,
+                showLine: true,
+                pointRadius: showBullets ? 3 : 0,
+                tension: 0.3
+              },
+              {
+                label: 'Predicted Prices (Normalized)',
+                data: predicted,
+                borderColor: predColor,
+                backgroundColor: predColor,
+                showLine: true,
+                pointRadius: showBullets ? 3 : 0,
+                tension: 0.3
+              }
+            ]
+          };
+
+          const priceConfig = {
+            type: 'line',
+            data: priceData,
+            options: {
+              responsive: true,
+              plugins: { title: { display: true, text: 'True vs Predicted Prices' } },
+              scales: {
+                x: { title: { display: true, text: 'Time' } }
+              }
+            }
+          };
+
+          if (priceChart) priceChart.destroy();
+          priceChart = new Chart(document.getElementById('priceChart'), priceConfig);
+
+          const pctChangeTrue = actual.slice(1).map((val, i) => ((val - actual[i]) / actual[i]) * 100);
+          const pctChangePred = predicted.slice(1).map((val, i) => ((val - predicted[i]) / predicted[i]) * 100);
+          const changeData = {
+            labels: labels.slice(1),
+            datasets: [
+              {
+                label: 'True % Change',
+                data: pctChangeTrue,
+                backgroundColor: trueColor
+              },
+              {
+                label: 'Predicted % Change',
+                data: pctChangePred,
+                backgroundColor: predColor
+              }
+            ]
+          };
+
+          const changeConfig = {
+            type: 'bar',
+            data: changeData,
+            options: {
+              responsive: true,
+              plugins: { title: { display: true, text: 'True vs Predicted % Change' } },
+              scales: {
+                x: { title: { display: true, text: 'Time' } }
+              }
+            }
+          };
+
+          if (changeChart) changeChart.destroy();
+          changeChart = new Chart(document.getElementById('changeChart'), changeConfig);
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('summary').innerText = "API Error";
+        });
+    }
+
+    function toggleBullets() {
+      showBullets = !showBullets;
+      fetchPrediction();
+    }
+
+    function updateColors() {
+      fetchPrediction();
+    }
+
+    setInterval(fetchPrediction, 30000);
+    fetchPrediction();
+  </script>
+</body>
+</html>
