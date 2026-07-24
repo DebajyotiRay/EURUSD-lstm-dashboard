@@ -2,7 +2,7 @@
 
 A forex forecasting dashboard that trains an **LSTM neural network** (PyTorch) on EURUSD 15-minute candles and serves live-updating predictions through a Flask + Plotly web UI.
 
-**[Live demo](#)** — *replace with your deployed URL, see [Deployment](#deployment) below*
+**[Live demo](#)** — *replace with your deployed URL, see [Deployment](#deployment) below. Note: free-tier hosting sleeps after 15 min idle — the first click after a while takes ~10-30s to wake up. This is expected, not a bug.*
 
 ![Dashboard screenshot](docs/screenshot.png)
 *Replace `docs/screenshot.png` with an actual screenshot before publishing — this is the single highest-impact thing you can add for recruiters skimming GitHub.*
@@ -84,13 +84,13 @@ The model is evaluated on **directional accuracy** (did it correctly call up vs.
 
 | Metric | LSTM | Naive baseline |
 |---|---|---|
-| Directional accuracy | 57.8% | n/a — a flat/no-change predictor never calls a direction, so this metric can't score it meaningfully. Judge the LSTM's 57.8% against 50% (random chance) instead. |
-| MAE (normalized price) | 0.164 | 0.103 |
-| RMSE (normalized price) | 0.208 | 0.166 |
+| Directional accuracy | 59.7% | n/a — a flat/no-change predictor never calls a direction, so this metric can't score it meaningfully. Judge the LSTM's 59.7% against 50% (random chance) instead. |
+| MAE (normalized price) | 0.191 | 0.109 |
+| RMSE (normalized price) | 0.230 | 0.179 |
 
-*From an actual training run (`python train_model.py --epochs 40 --period 60d`, ~5,600 bars of EURUSD 15-min history). Re-run yourself and update these numbers periodically — they'll shift somewhat with the specific data window fetched, since yfinance only serves the trailing ~60 days at 15-min resolution.*
+*From an actual training run (`python train_model.py --epochs 40 --period 60d`, ~5,600 bars of EURUSD 15-min history, July 2026). Re-run yourself and update these numbers periodically — they'll shift somewhat with the specific data window fetched (yfinance only serves the trailing ~60 days at 15-min resolution) and with random initialization; directional accuracy has ranged 57-60% and MAE/RMSE have stayed consistently above the naive baseline across multiple independent runs during development.*
 
-**Honest interpretation:** the LSTM does **not** beat the naive baseline on raw regression error (MAE/RMSE) — this is a real and expected result for short-horizon forex (see [Modeling Experiments](#modeling-experiments) for what else was tried). It does show a modest, reproducible edge over random chance on directional accuracy (57.8% vs. 50%), which is the more relevant metric for a directional forecast. Treat this as a research finding, not a trading edge — see [Limitations](#limitations).
+**Honest interpretation:** the LSTM does **not** beat the naive baseline on raw regression error (MAE/RMSE) — this is a real and expected result for short-horizon forex (see [Modeling Experiments](#modeling-experiments) for what else was tried). It does show a modest, reproducible edge over random chance on directional accuracy (57-60% vs. 50% across runs), which is the more relevant metric for a directional forecast. Treat this as a research finding, not a trading edge — see [Limitations](#limitations).
 
 ## Testing
 
@@ -175,6 +175,8 @@ Then verify with a quick standalone check before re-running anything:
 ```bash
 python -c "import yfinance as yf; print(yf.download('EURUSD=X', period='5d', interval='15m').tail())"
 ```
+
+**Bottom chart y-axis showing absurd values like "1T" (trillion):** this was a real bug, found and fixed — the normalized price sits at exactly 0 at each day's rolling low by construction, so a naive percent-change calculation divides by near-zero there and produces meaningless numbers. Fixed by switching that chart to absolute point change instead of percentage.
 
 ## Deployment
 

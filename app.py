@@ -96,57 +96,67 @@ def load_results():
 
 
 def build_charts(results):
-    """Build Plotly chart HTML strings from prediction results."""
+    """Build Plotly chart HTML strings from prediction results, themed to
+    match the dark terminal-style dashboard."""
     import plotly.graph_objects as go
 
     timestamps = results["timestamps"]
     true_prices = results["true_prices"]
     pred_prices = results["predicted_prices"]
-    EPS = 1e-10
+
+    # Shared dark theme so the charts sit inside the terminal aesthetic
+    # instead of floating as default white Plotly boxes.
+    PANEL_BG = "#12181F"
+    GRID = "#1E2630"
+    TEXT = "#9AA5B1"
+    FONT = dict(family="Inter, -apple-system, sans-serif", color=TEXT, size=12)
 
     fig_price = go.Figure()
     fig_price.add_trace(go.Scatter(
-        x=timestamps, y=true_prices, mode="lines+markers", name="Actual (normalised)",
-        line=dict(color="#2e7d32", width=2), marker=dict(size=4),
+        x=timestamps, y=true_prices, mode="lines", name="Actual",
+        line=dict(color="#3DDC84", width=2),
     ))
     fig_price.add_trace(go.Scatter(
-        x=timestamps, y=pred_prices, mode="lines+markers", name="Predicted (normalised)",
-        line=dict(color="#1565c0", width=2, dash="dash"), marker=dict(size=4),
+        x=timestamps, y=pred_prices, mode="lines", name="Predicted",
+        line=dict(color="#4FA8E0", width=2, dash="dot"),
     ))
     fig_price.update_layout(
-        title="True vs Predicted Close Price (normalised 0-1)",
-        xaxis_title="Time (UTC)", yaxis_title="Normalised price",
-        hovermode="x unified", legend=dict(orientation="h", y=1.08),
-        margin=dict(l=50, r=20, t=60, b=50),
-        plot_bgcolor="#fafafa", paper_bgcolor="#ffffff",
+        title=dict(text="ACTUAL VS PREDICTED CLOSE (normalised 0-1)", font=dict(size=13, color=TEXT), x=0),
+        xaxis_title=None, yaxis_title=None,
+        hovermode="x unified", legend=dict(orientation="h", y=1.12, x=0, font=FONT),
+        margin=dict(l=45, r=20, t=50, b=40),
+        plot_bgcolor=PANEL_BG, paper_bgcolor=PANEL_BG,
+        font=FONT,
     )
-    fig_price.update_xaxes(showgrid=True, gridcolor="#eeeeee")
-    fig_price.update_yaxes(showgrid=True, gridcolor="#eeeeee")
+    fig_price.update_xaxes(showgrid=True, gridcolor=GRID, zeroline=False, linecolor=GRID)
+    fig_price.update_yaxes(showgrid=True, gridcolor=GRID, zeroline=False, linecolor=GRID)
 
-    pct_true = [
-        ((true_prices[i] - true_prices[i - 1]) / (abs(true_prices[i - 1]) + EPS)) * 100
-        for i in range(1, len(true_prices))
-    ]
-    pct_pred = [
-        ((pred_prices[i] - pred_prices[i - 1]) / (abs(pred_prices[i - 1]) + EPS)) * 100
-        for i in range(1, len(pred_prices))
-    ]
+    # Absolute point change, not percentage: the normalized price is already a
+    # bounded 0-1 value that sits at exactly 0 at each day's rolling low by
+    # construction, so a % change calculation divides by near-zero there and
+    # produces meaningless huge numbers (this was a real bug found in
+    # production — see README Troubleshooting). Absolute delta carries the
+    # same information without that failure mode.
+    delta_true = [true_prices[i] - true_prices[i - 1] for i in range(1, len(true_prices))]
+    delta_pred = [pred_prices[i] - pred_prices[i - 1] for i in range(1, len(pred_prices))]
 
     fig_pct = go.Figure()
-    fig_pct.add_trace(go.Bar(x=timestamps[1:], y=pct_true, name="Actual % change", marker_color="#2e7d32", opacity=0.75))
-    fig_pct.add_trace(go.Bar(x=timestamps[1:], y=pct_pred, name="Predicted % change", marker_color="#1565c0", opacity=0.75))
+    fig_pct.add_trace(go.Bar(x=timestamps[1:], y=delta_true, name="Actual", marker_color="#3DDC84", opacity=0.85))
+    fig_pct.add_trace(go.Bar(x=timestamps[1:], y=delta_pred, name="Predicted", marker_color="#4FA8E0", opacity=0.85))
     fig_pct.update_layout(
-        title="Bar-by-Bar % Change: Actual vs Predicted",
-        xaxis_title="Time (UTC)", yaxis_title="% change", barmode="group",
-        hovermode="x unified", legend=dict(orientation="h", y=1.08),
-        margin=dict(l=50, r=20, t=60, b=50),
-        plot_bgcolor="#fafafa", paper_bgcolor="#ffffff",
+        title=dict(text="BAR-BY-BAR CHANGE", font=dict(size=13, color=TEXT), x=0),
+        xaxis_title=None, yaxis_title=None, barmode="group",
+        hovermode="x unified", legend=dict(orientation="h", y=1.12, x=0, font=FONT),
+        margin=dict(l=45, r=20, t=50, b=40),
+        plot_bgcolor=PANEL_BG, paper_bgcolor=PANEL_BG,
+        font=FONT,
     )
-    fig_pct.update_xaxes(showgrid=True, gridcolor="#eeeeee")
-    fig_pct.update_yaxes(showgrid=True, gridcolor="#eeeeee", zeroline=True, zerolinecolor="#aaa")
+    fig_pct.update_xaxes(showgrid=True, gridcolor=GRID, zeroline=False, linecolor=GRID)
+    fig_pct.update_yaxes(showgrid=True, gridcolor=GRID, zeroline=True, zerolinecolor="#3A4552", linecolor=GRID)
 
-    price_html = fig_price.to_html(full_html=False, include_plotlyjs="cdn", div_id="priceChart")
-    pct_html = fig_pct.to_html(full_html=False, include_plotlyjs=False, div_id="pctChart")
+    chart_config = {"displayModeBar": False, "responsive": True}
+    price_html = fig_price.to_html(full_html=False, include_plotlyjs="cdn", div_id="priceChart", config=chart_config)
+    pct_html = fig_pct.to_html(full_html=False, include_plotlyjs=False, div_id="pctChart", config=chart_config)
     return price_html, pct_html
 
 
@@ -157,75 +167,168 @@ PAGE_TEMPLATE = """
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EURUSD LSTM Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #0B0F14;
+      --panel: #12181F;
+      --panel-raised: #161D26;
+      --border: #1E2630;
+      --text: #E8ECEF;
+      --text-muted: #6B7785;
+      --text-dim: #9AA5B1;
+      --up: #3DDC84;
+      --down: #FF5C5C;
+      --accent: #4FA8E0;
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+      --sans: 'Inter', -apple-system, sans-serif;
+    }
     *, *::before, *::after { box-sizing: border-box; }
     body {
-      font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 24px 16px;
-      display: flex; flex-direction: column; align-items: center;
+      font-family: var(--sans); background: var(--bg); color: var(--text);
+      margin: 0; padding: 32px 16px; display: flex; flex-direction: column; align-items: center;
+      -webkit-font-smoothing: antialiased;
     }
-    .card {
-      background: #fff; border-radius: 14px; padding: 28px 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 1100px; margin-bottom: 20px;
+    .terminal { width: 100%; max-width: 1040px; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px; padding-bottom: 18px; margin-bottom: 22px;
+      border-bottom: 1px solid var(--border);
     }
-    .header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-    h1 { margin: 0; font-size: 1.5em; color: #1a1a2e; }
-    .badge { font-size: 0.78em; font-weight: 600; padding: 3px 12px; border-radius: 20px; }
-    .badge-live { background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
-    .badge-demo { background:#fff8e1; color:#f57f17; border:1px solid #ffe082; }
-    .signal { font-size: 1.3em; font-weight: 700; padding: 12px 20px; border-radius: 10px; display: inline-block; margin-bottom: 12px; }
-    .buy  { background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
-    .sell { background:#ffebee; color:#c62828; border:1px solid #ef9a9a; }
-    .err  { background:#f5f5f5; color:#555;    border:1px solid #ddd; }
-    .metrics-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom: 16px; }
-    .metric-pill { background:#f5f7fa; border:1px solid #e0e4e9; border-radius:8px; padding:6px 12px; font-size:0.82em; color:#444; }
-    .meta { font-size:0.82em; color:#888; margin-bottom:18px; }
-    form { display:inline; }
+    .ticker { display: flex; align-items: baseline; gap: 10px; }
+    .ticker-symbol { font-family: var(--mono); font-size: 1.05em; font-weight: 700; letter-spacing: 0.04em; color: var(--text); }
+    .ticker-label { font-size: 0.78em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--mono); font-size: 0.72em; font-weight: 500; letter-spacing: 0.05em;
+      padding: 4px 10px; border-radius: 20px; text-transform: uppercase;
+      background: var(--panel-raised); border: 1px solid var(--border); color: var(--text-dim);
+    }
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--up);
+      box-shadow: 0 0 0 0 rgba(61, 220, 132, 0.6);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0.55); }
+      70%  { box-shadow: 0 0 0 6px rgba(61, 220, 132, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .live-dot { animation: none; }
+    }
+
+    .hero { margin-bottom: 20px; }
+    .hero-label { font-size: 0.78em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .hero-signal {
+      font-family: var(--mono); font-weight: 700; font-size: 2.1em; letter-spacing: -0.01em;
+      display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    }
+    .hero-signal.up   { color: var(--up); }
+    .hero-signal.down { color: var(--down); }
+    .hero-signal.err  { color: var(--text-dim); font-size: 1.3em; }
+    .hero-change { font-size: 0.55em; color: var(--text-dim); font-weight: 500; }
+    .arrow { font-size: 0.75em; }
+
+    .stat-strip {
+      display: flex; gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .stat {
+      flex: 1; background: var(--panel); padding: 12px 16px; min-width: 120px;
+    }
+    .stat-label { font-size: 0.68em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .stat-value { font-family: var(--mono); font-size: 1.05em; font-weight: 500; color: var(--text); }
+
+    .meta-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-size: 0.8em; color: var(--text-muted); margin-bottom: 22px;
+    }
+    .meta-row .dot-sep { color: var(--border); }
+
     button {
-      padding: 8px 18px; font-size: 13px; border: none; border-radius: 6px;
-      background: #1565c0; color: #fff; cursor: pointer; transition: background 0.15s;
+      font-family: var(--sans); padding: 7px 16px; font-size: 0.82em; font-weight: 600;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--panel-raised); color: var(--text); cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
     }
-    button:hover { background: #0d47a1; }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+
     .error-box {
-      background: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; border-radius: 8px;
-      padding: 16px; margin-top: 12px; white-space: pre-wrap; font-size: 0.9em;
+      background: rgba(255, 92, 92, 0.08); color: #ff8585; border: 1px solid rgba(255, 92, 92, 0.3);
+      border-radius: 8px; padding: 16px; margin: 16px 0; white-space: pre-wrap; font-size: 0.85em;
+      font-family: var(--mono);
     }
-    .disclaimer { font-size: 0.75em; color: #bbb; text-align: center; margin-top: 8px; }
-    .chart-wrap { margin-bottom: 10px; }
+
+    .chart-wrap {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 8px 4px; margin-bottom: 14px;
+    }
+
+    .disclaimer {
+      font-size: 0.72em; color: var(--text-muted); text-align: center;
+      margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); line-height: 1.6;
+    }
+    .disclaimer em { color: var(--text-dim); font-style: normal; }
+
+    @media (max-width: 560px) {
+      .hero-signal { font-size: 1.5em; }
+      .stat-strip { flex-direction: column; }
+    }
   </style>
   <meta http-equiv="refresh" content="30">
 </head>
 <body>
-<div class="card">
-  <div class="header-row">
-    <h1>EURUSD LSTM Dashboard</h1>
-    <span class="badge {{ badge_class }}">{{ source_label }}</span>
+<div class="terminal">
+  <div class="topbar">
+    <div class="ticker">
+      <span class="ticker-symbol">EUR/USD</span>
+      <span class="ticker-label">LSTM Forecast Terminal</span>
+    </div>
+    <span class="badge"><span class="live-dot"></span>{{ source_label }}</span>
   </div>
 
   {% if error %}
-    <div class="signal err">Prediction unavailable</div>
+    <div class="hero">
+      <div class="hero-label">Status</div>
+      <div class="hero-signal err">Prediction unavailable</div>
+    </div>
     <div class="error-box">{{ error }}</div>
-    <div class="meta">
-      <form method="post" action="/refresh"><button type="submit">Run Prediction Now</button></form>
-    </div>
+    <form method="post" action="/refresh"><button type="submit">Run Prediction Now</button></form>
   {% else %}
-    <div class="signal {{ signal_class }}">{{ signal_text }}</div>
-    <div class="metrics-row">
-      <span class="metric-pill">Backtest MAE: {{ mae }}</span>
-      <span class="metric-pill">Backtest RMSE: {{ rmse }}</span>
-      <span class="metric-pill">Directional accuracy: {{ dir_acc }}</span>
+    <div class="hero">
+      <div class="hero-label">Next-bar forecast</div>
+      <div class="hero-signal {{ signal_class }}">
+        <span><span class="arrow">{{ arrow }}</span> {{ signal_word }}</span>
+        <span class="hero-change">{{ signal_change }}</span>
+      </div>
     </div>
-    <div class="meta">
-      Generated: {{ generated_at }} &nbsp;&middot;&nbsp;
-      Auto-refreshes every {{ refresh_interval }}s in the background
-      &nbsp;&middot;&nbsp;
-      <form method="post" action="/refresh"><button type="submit">Refresh Now</button></form>
+
+    <div class="stat-strip">
+      <div class="stat"><div class="stat-label">Backtest MAE</div><div class="stat-value">{{ mae }}</div></div>
+      <div class="stat"><div class="stat-label">Backtest RMSE</div><div class="stat-value">{{ rmse }}</div></div>
+      <div class="stat"><div class="stat-label">Directional Acc.</div><div class="stat-value">{{ dir_acc }}</div></div>
     </div>
+
+    <div class="meta-row">
+      <span>Generated {{ generated_at }}</span>
+      <span class="dot-sep">&middot;</span>
+      <span>Refreshes every {{ refresh_interval }}s</span>
+      <span class="dot-sep">&middot;</span>
+      <form method="post" action="/refresh"><button type="submit">Refresh now</button></form>
+    </div>
+
     <div class="chart-wrap">{{ price_chart | safe }}</div>
     <div class="chart-wrap">{{ pct_chart   | safe }}</div>
   {% endif %}
 
   <div class="disclaimer">
-    Model: single-layer LSTM &middot; hidden=100 &middot; trained on EURUSD M15 &nbsp;&middot;&nbsp;
+    <em>Single-layer LSTM</em> &middot; hidden=100 &middot; trained on EUR/USD M15 &nbsp;&middot;&nbsp;
     Prices shown are <em>normalised</em> (0-1 within each trading day) &nbsp;&middot;&nbsp;
     Educational / portfolio project only &mdash; not financial advice.
   </div>
@@ -241,16 +344,13 @@ def render_page(error=None):
 
     if error or results is None:
         return render_template_string(
-            PAGE_TEMPLATE, error=error, badge_class="badge-demo", source_label="No data",
-            signal_class="err", signal_text="", price_chart="", pct_chart="", generated_at="",
+            PAGE_TEMPLATE, error=error, source_label="no data",
+            signal_class="err", arrow="", signal_word="", signal_change="",
+            price_chart="", pct_chart="", generated_at="",
         )
 
     pct_num = float(results.get("percent_change", 0.0))
     is_buy = pct_num > 0
-    signal_text = (
-        f"Predicted UP  ·  Next change: +{pct_num:.5f}%" if is_buy
-        else f"Predicted DOWN  ·  Next change: {pct_num:.5f}%"
-    )
     source = results.get("data_source", "")
     is_live = "metatrader" in source.lower()
     price_chart, pct_chart = build_charts(results)
@@ -262,10 +362,11 @@ def render_page(error=None):
     return render_template_string(
         PAGE_TEMPLATE,
         error=None,
-        badge_class="badge-live" if is_live else "badge-demo",
-        source_label=("Live · " if is_live else "Demo · ") + source,
-        signal_class="buy" if is_buy else "sell",
-        signal_text=signal_text,
+        source_label=("live · " if is_live else "demo · ") + source.lower(),
+        signal_class="up" if is_buy else "down",
+        arrow="\u25b2" if is_buy else "\u25bc",
+        signal_word="UP" if is_buy else "DOWN",
+        signal_change=f"{'+' if is_buy else ''}{pct_num:.5f}% next bar",
         mae=f"{mae:.5f}" if mae is not None else "n/a",
         rmse=f"{rmse:.5f}" if rmse is not None else "n/a",
         dir_acc=f"{dir_acc * 100:.1f}%" if dir_acc is not None else "n/a",
