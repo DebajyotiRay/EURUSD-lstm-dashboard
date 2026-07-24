@@ -1,0 +1,32 @@
+# --- PyTorch CPU-only wheels ------------------------------------------------
+# Plain `pip install torch` pulls ~5GB of NVIDIA/CUDA dependencies that are
+# useless for this project (we only run small CPU inference). Installing from
+# PyTorch's dedicated CPU index keeps the image small and deploys fast on
+# free-tier hosts (Render, Fly.io, HF Spaces, etc).
+--index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://pypi.org/simple
+
+torch==2.4.1
+flask==3.1.3
+numpy==1.26.4
+pandas==2.2.2
+plotly==5.24.1
+# yfinance pinned loosely on purpose: Yahoo Finance periodically changes its
+# auth/cookie handling server-side, which has broken older yfinance versions
+# in the past (see README troubleshooting note). >=1.5.1 is the first version
+# confirmed working as of July 2026; if data fetching ever breaks again with
+# a JSONDecodeError, `pip install --upgrade yfinance` first before assuming
+# the code is broken.
+yfinance>=1.5.1
+apscheduler==3.10.4
+gunicorn==22.0.0
+
+# --- Optional: live data via MetaTrader 5 -----------------------------------
+# Windows-only; will fail to install on Mac/Linux/most hosting platforms.
+# The dashboard automatically falls back to yfinance if MT5 is unavailable.
+# Uncomment only if running locally on Windows with MT5 installed:
+# MetaTrader5==5.0.45
+
+# --- Dev / testing -----------------------------------------------------------
+pytest==8.3.3
+matplotlib==3.9.2

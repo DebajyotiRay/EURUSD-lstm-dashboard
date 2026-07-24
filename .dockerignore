@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.git/
+.gitignore
+tests/
+.pytest_cache/
+prediction_results.json
+training_report.json
+loss_curve.png
+.venv/
+venv/
+*.md

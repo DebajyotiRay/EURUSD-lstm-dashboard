@@ -1,0 +1,16 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Connect this repo on Render and it will auto-detect this file, or run
+# `render deploy` from the Render CLI. Free tier: web service sleeps after
+# 15 min of inactivity; first request after that takes ~10-30s to wake up.
+services:
+  - type: web
+    name: eurusd-lstm-dashboard
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: REFRESH_INTERVAL_SECONDS
+        value: "60"
+      - key: PORT
+        value: "10000"
+    healthCheckPath: /health
