@@ -121,10 +121,10 @@ def build_charts(results):
         line=dict(color="#4FA8E0", width=2, dash="dot"),
     ))
     fig_price.update_layout(
-        title=dict(text="ACTUAL VS PREDICTED CLOSE (normalised 0-1)", font=dict(size=13, color=TEXT), x=0),
+        title=dict(text="ACTUAL VS PREDICTED CLOSE (normalised 0-1)", font=dict(size=13, color=TEXT), x=0, y=0.98, yanchor="top"),
         xaxis_title=None, yaxis_title=None,
-        hovermode="x unified", legend=dict(orientation="h", y=1.12, x=0, font=FONT),
-        margin=dict(l=45, r=20, t=50, b=40),
+        hovermode="x unified", legend=dict(orientation="h", y=-0.18, x=0, font=FONT),
+        margin=dict(l=45, r=20, t=45, b=55),
         plot_bgcolor=PANEL_BG, paper_bgcolor=PANEL_BG,
         font=FONT,
     )
@@ -144,10 +144,10 @@ def build_charts(results):
     fig_pct.add_trace(go.Bar(x=timestamps[1:], y=delta_true, name="Actual", marker_color="#3DDC84", opacity=0.85))
     fig_pct.add_trace(go.Bar(x=timestamps[1:], y=delta_pred, name="Predicted", marker_color="#4FA8E0", opacity=0.85))
     fig_pct.update_layout(
-        title=dict(text="BAR-BY-BAR CHANGE", font=dict(size=13, color=TEXT), x=0),
+        title=dict(text="BAR-BY-BAR CHANGE", font=dict(size=13, color=TEXT), x=0, y=0.98, yanchor="top"),
         xaxis_title=None, yaxis_title=None, barmode="group",
-        hovermode="x unified", legend=dict(orientation="h", y=1.12, x=0, font=FONT),
-        margin=dict(l=45, r=20, t=50, b=40),
+        hovermode="x unified", legend=dict(orientation="h", y=-0.18, x=0, font=FONT),
+        margin=dict(l=45, r=20, t=45, b=55),
         plot_bgcolor=PANEL_BG, paper_bgcolor=PANEL_BG,
         font=FONT,
     )
