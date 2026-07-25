@@ -352,7 +352,6 @@ def render_page(error=None):
     pct_num = float(results.get("percent_change", 0.0))
     is_buy = pct_num > 0
     source = results.get("data_source", "")
-    is_live = "metatrader" in source.lower()
     price_chart, pct_chart = build_charts(results)
 
     mae = results.get("mae")
@@ -362,7 +361,7 @@ def render_page(error=None):
     return render_template_string(
         PAGE_TEMPLATE,
         error=None,
-        source_label=("live · " if is_live else "demo · ") + source.lower(),
+        source_label=source.lower(),
         signal_class="up" if is_buy else "down",
         arrow="\u25b2" if is_buy else "\u25bc",
         signal_word="UP" if is_buy else "DOWN",

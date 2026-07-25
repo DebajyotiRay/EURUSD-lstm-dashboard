@@ -1,6 +1,5 @@
 # ── EURUSD LSTM Dashboard — Dockerfile ───────────────────────────────────────
-# Runs the dashboard in demo mode (yfinance data).
-# MT5 live data is not available inside Docker (MT5 is Windows-only).
+# Runs the dashboard using yfinance market data.
 #
 # Local build & run:
 #   docker build -t eurusd-dashboard .

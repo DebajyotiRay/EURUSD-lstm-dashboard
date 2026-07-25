@@ -9,9 +9,8 @@ loading, no network calls, no inference). Callers explicitly invoke the
 functions they need. This makes the code testable and reusable from
 train_model.py, LSTM_model_prediction.py, and unit tests alike.
 
-Data source priority:
-  1. MetaTrader 5  — live market data (Windows only, MT5 must be open & logged in)
-  2. yfinance      — real historical EURUSD data, no account needed (auto-fallback)
+Data source: yfinance (Yahoo Finance) — real EURUSD market data, no account
+needed, works anywhere with internet access (including cloud/Docker hosts).
 """
 
 from __future__ import annotations
@@ -116,40 +115,6 @@ def build_feature_frame(raw_ohlc: pd.DataFrame) -> pd.DataFrame:
 
 # ─── Data Fetching ────────────────────────────────────────────────────────────
 
-def fetch_mt5(symbol: str = "EURUSD", bars: int = REQUIRED_BARS) -> pd.DataFrame | None:
-    """Try to pull live data from MetaTrader 5. Returns DataFrame or None."""
-    try:
-        import MetaTrader5 as mt5
-    except ImportError:
-        logger.info("MetaTrader5 package not installed — skipping.")
-        return None
-
-    if not mt5.initialize():
-        logger.warning("MT5 initialize() failed — MT5 may not be open or logged in.")
-        mt5.shutdown()
-        return None
-
-    if mt5.symbol_info(symbol) is None:
-        candidates = [s.name for s in mt5.symbols_get() if "EUR" in s.name]
-        logger.warning("Symbol '%s' not found. EUR symbols on this broker: %s", symbol, candidates)
-        mt5.shutdown()
-        return None
-
-    rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M15, 0, bars)
-    mt5.shutdown()
-
-    if rates is None or len(rates) == 0:
-        logger.warning("MT5 returned no data — market may be closed (weekend/holiday).")
-        return None
-
-    df = pd.DataFrame(rates)
-    df["time"] = pd.to_datetime(df["time"], unit="s")
-    df.set_index("time", inplace=True)
-    df = df[["open", "high", "low", "close"]]
-    logger.info("Fetched %d bars of live EURUSD data from MT5.", len(df))
-    return df
-
-
 def fetch_yfinance(symbol: str = "EURUSD=X", bars: int = REQUIRED_BARS,
                     period: str = "7d", interval: str = "15m") -> pd.DataFrame | None:
     """
@@ -182,23 +147,16 @@ def fetch_yfinance(symbol: str = "EURUSD=X", bars: int = REQUIRED_BARS,
 
 
 def get_market_data(required_bars: int = REQUIRED_BARS) -> tuple[pd.DataFrame, str]:
-    """
-    Try MT5 first. If that fails for any reason, fall back to yfinance.
-    Returns (DataFrame, source_label). Raises RuntimeError if both fail.
-    """
-    df = fetch_mt5(bars=required_bars)
-    if df is not None and len(df) >= required_bars:
-        return df, "MetaTrader 5 (Live)"
-
-    logger.info("Falling back to yfinance for data...")
+    """Fetch EURUSD OHLC data from yfinance. Returns (DataFrame, source_label).
+    Raises RuntimeError if the fetch fails or returns too little data."""
     df = fetch_yfinance(bars=required_bars)
     if df is not None and len(df) >= required_bars:
-        return df, "yfinance (Demo)"
+        return df, "yfinance"
 
     raise RuntimeError(
-        "Could not obtain enough market data from either source. "
-        "For live data: open MetaTrader 5, log in, and re-run. "
-        "For demo data: run `pip install yfinance` and check your network connection."
+        "Could not obtain enough market data from yfinance. "
+        "Check your internet connection, or that Yahoo Finance is reachable "
+        "(pip install --upgrade yfinance if this used to work — see README Troubleshooting)."
     )
 
 

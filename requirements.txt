@@ -21,12 +21,6 @@ yfinance>=1.5.1
 apscheduler==3.10.4
 gunicorn==22.0.0
 
-# --- Optional: live data via MetaTrader 5 -----------------------------------
-# Windows-only; will fail to install on Mac/Linux/most hosting platforms.
-# The dashboard automatically falls back to yfinance if MT5 is unavailable.
-# Uncomment only if running locally on Windows with MT5 installed:
-# MetaTrader5==5.0.45
-
 # --- Dev / testing -----------------------------------------------------------
 pytest==8.3.3
 matplotlib==3.9.2

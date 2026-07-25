@@ -2,12 +2,12 @@
 
 A forex forecasting dashboard that trains an **LSTM neural network** (PyTorch) on EURUSD 15-minute candles and serves live-updating predictions through a Flask + Plotly web UI.
 
-**[Live demo](#)** — *replace with your deployed URL, see [Deployment](#deployment) below. Note: free-tier hosting sleeps after 15 min idle — the first click after a while takes ~10-30s to wake up. This is expected, not a bug.*
+**[Live demo](https://eurusd-lstm-dashboard.onrender.com)** — *free-tier hosting sleeps after 15 min idle, so the first click after a while takes ~10-30s to wake up. This is expected, not a bug.*
 
 ![Dashboard screenshot](docs/screenshot.png)
 *Replace `docs/screenshot.png` with an actual screenshot before publishing — this is the single highest-impact thing you can add for recruiters skimming GitHub.*
 
-> No broker account needed. The dashboard runs in demo mode automatically using free historical data from Yahoo Finance. MetaTrader 5 (Windows-only) is supported for live data as an optional extra.
+> No broker account needed. The dashboard runs entirely on free historical data from Yahoo Finance — no login, no install, works anywhere.
 
 ---
 
@@ -22,8 +22,8 @@ A forex forecasting dashboard that trains an **LSTM neural network** (PyTorch) o
 
 - LSTM model forecasts the next 15-min normalized close price
 - Directional forecast (up/down) with backtest accuracy shown alongside it — see [Limitations](#limitations) for why this isn't a "trading signal"
-- Interactive Plotly charts: true vs. predicted price, and bar-by-bar % change
-- Data source badge — live MT5 vs. demo yfinance data
+- Interactive Plotly charts: true vs. predicted price, and bar-by-bar point change
+- Real market data via yfinance — no account or install required
 - Background scheduler refreshes predictions on an interval, independent of page views
 - Dockerized, with a `render.yaml` blueprint for one-click deployment
 
@@ -33,8 +33,7 @@ A forex forecasting dashboard that trains an **LSTM neural network** (PyTorch) o
 |---|---|
 | Model | PyTorch (single-layer LSTM) |
 | Backend | Python / Flask + APScheduler |
-| Data (live) | MetaTrader 5 (Windows only, optional) |
-| Data (demo) | yfinance (all platforms) |
+| Data | yfinance (Yahoo Finance, all platforms) |
 | Frontend | Plotly (server-rendered, embedded via Jinja2) |
 | Testing | pytest |
 | Container | Docker / gunicorn |
@@ -153,15 +152,6 @@ Being upfront about these is part of the point of this project:
 - Predictions are on **normalized** prices (0-1 within each trading day), not raw pips — they aren't directly tradable numbers.
 - 15-minute forex is close to a random walk; treat any accuracy improvement over the naive baseline as a research result to investigate further, not a signal to act on.
 - The dashboard re-runs the model on a fixed interval and shows the most recent backtest window — it does not track live P&L or compare predictions against what actually happened after the fact.
-
-## Live Data via MetaTrader 5 (optional, Windows only)
-
-1. [Download MetaTrader 5](https://www.metatrader5.com/en/download) and install it
-2. Open MT5 and log in to any broker account (a free demo account works)
-3. In `requirements.txt`, uncomment the `MetaTrader5` line and run `pip install MetaTrader5`
-4. Restart the dashboard — it detects MT5 automatically and switches to live data
-
-> Some brokers name the pair `EURUSDm` or `EURUSD.` instead of `EURUSD`. If MT5 can't find the symbol, the script prints the available EUR pairs on your broker so you can update it.
 
 ---
 
