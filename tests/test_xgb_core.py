@@ -67,7 +67,7 @@ class TestXGBoostBacktestAndForecast:
         assert len(run.true_prices) == core.EVALUATION_STEPS
         assert len(run.timestamps) == core.EVALUATION_STEPS
         assert isinstance(run.next_prediction, float)
-        assert isinstance(run.percent_change, float)
+        assert isinstance(run.predicted_change, float)
 
     def test_raises_on_insufficient_data(self):
         df = make_synthetic_ohlc(n=50, seed=2)

@@ -51,7 +51,7 @@ def main() -> int:
         "predicted_prices": run.predicted_prices,
         "true_prices": run.true_prices,
         "timestamps": run.timestamps,
-        "percent_change": run.percent_change,
+        "predicted_change": run.predicted_change,
         "next_prediction": run.next_prediction,
         "data_source": data_source,
         "mae": metrics["mae"],

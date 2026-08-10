@@ -52,13 +52,13 @@ def run_xgboost_backtest_and_forecast(
     next_flat = flatten_window(next_seq).reshape(1, -1)
     next_prediction = float(model.predict(xgb.DMatrix(next_flat))[0])
 
-    last_pred = all_pred[-1]
-    pct_change = ((next_prediction - last_pred) / (abs(last_pred) + 1e-10)) * 100
+    last_true = all_true[-1]
+    predicted_change = next_prediction - last_true
 
     return core.PredictionRun(
         timestamps=timestamps,
         true_prices=all_true,
         predicted_prices=all_pred,
         next_prediction=next_prediction,
-        percent_change=pct_change,
+        predicted_change=predicted_change,
     )

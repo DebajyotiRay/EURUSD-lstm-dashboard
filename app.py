@@ -51,7 +51,7 @@ def _build_result_entry(run, data_source):
         "predicted_prices": run.predicted_prices,
         "true_prices": run.true_prices,
         "timestamps": run.timestamps,
-        "percent_change": run.percent_change,
+        "predicted_change": run.predicted_change,
         "next_prediction": run.next_prediction,
         "data_source": data_source,
         "mae": metrics["mae"],
@@ -392,8 +392,8 @@ function showModel(key) {
 
 
 def _build_view_context(key, results, load_plotlyjs):
-    pct_num = float(results.get("percent_change", 0.0))
-    is_buy = pct_num > 0
+    change = float(results.get("predicted_change", 0.0))
+    is_buy = change > 0
     price_chart, pct_chart = build_charts(results, key, load_plotlyjs)
     mae = results.get("mae")
     rmse = results.get("rmse")
@@ -403,7 +403,7 @@ def _build_view_context(key, results, load_plotlyjs):
         "signal_class": "up" if is_buy else "down",
         "arrow": "\u25b2" if is_buy else "\u25bc",
         "signal_word": "UP" if is_buy else "DOWN",
-        "signal_change": f"{'+' if is_buy else ''}{pct_num:.5f}% next bar",
+        "signal_change": f"{'+' if is_buy else ''}{change:.5f} next bar (normalised price)",
         "mae": f"{mae:.5f}" if mae is not None else "n/a",
         "rmse": f"{rmse:.5f}" if rmse is not None else "n/a",
         "dir_acc": f"{dir_acc * 100:.1f}%" if dir_acc is not None else "n/a",

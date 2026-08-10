@@ -127,7 +127,7 @@ class PredictionRun:
     true_prices: list[float]
     predicted_prices: list[float]
     next_prediction: float
-    percent_change: float
+    predicted_change: float
 
 
 def run_backtest_and_forecast(
@@ -159,15 +159,15 @@ def run_backtest_and_forecast(
         next_seq = torch.tensor(values[-seq_length:], dtype=torch.float32, device=device)
         next_prediction = float(model(next_seq).item())
 
-    last_pred = all_pred[-1]
-    pct_change = ((next_prediction - last_pred) / (abs(last_pred) + 1e-10)) * 100
+    last_true = all_true[-1]
+    predicted_change = next_prediction - last_true
 
     return PredictionRun(
         timestamps=timestamps,
         true_prices=all_true,
         predicted_prices=all_pred,
         next_prediction=next_prediction,
-        percent_change=pct_change,
+        predicted_change=predicted_change,
     )
 
 
