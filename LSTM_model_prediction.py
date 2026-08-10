@@ -1,17 +1,3 @@
-"""
-LSTM_model_prediction.py
-------------------------
-CLI entry point: fetches EURUSD 15-min candle data, runs the trained LSTM
-model, and writes prediction_results.json for the Flask dashboard.
-
-All the real logic (model, data fetching, preprocessing, inference) lives
-in lstm_core.py so it can be reused and unit tested. This script is
-intentionally a thin wrapper.
-
-Usage:
-    python LSTM_model_prediction.py
-"""
-
 import json
 import logging
 import os

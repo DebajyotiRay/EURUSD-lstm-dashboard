@@ -1,24 +1,3 @@
-"""
-train_model.py
----------------
-Trains the EURUSD LSTM model from historical 15-min OHLC data and reports
-evaluation metrics against a naive baseline, so the model's performance can
-be honestly stated (e.g. in a README or a resume bullet).
-
-This is the missing "other half" of the pipeline: LSTM_model_prediction.py
-only ever ran inference against a pre-trained lstm_model.pth. This script
-shows how that file is actually produced, with a train/validation split,
-a loss curve, and metrics you can cite.
-
-Usage:
-    python train_model.py --epochs 40 --period 60d
-
-Output:
-    lstm_model.pth        (overwritten with newly trained weights)
-    training_report.json  (loss curve + final metrics, used by the README/plots)
-    loss_curve.png
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -37,8 +16,6 @@ logger = logging.getLogger("train_model")
 
 
 def make_sequences(feature_frame, seq_length: int):
-    """Slide a window of `seq_length` bars across the data to build (X, y) pairs.
-    y is the norm_close of the bar immediately following each window."""
     values = feature_frame.values
     close_idx = feature_frame.columns.get_loc("norm_close")
 
@@ -50,8 +27,6 @@ def make_sequences(feature_frame, seq_length: int):
 
 
 def chronological_split(X, y, val_fraction: float = 0.15):
-    """Time-series data must be split chronologically, never shuffled/randomly,
-    or the model 'sees the future' during validation."""
     split_idx = int(len(X) * (1 - val_fraction))
     return X[:split_idx], y[:split_idx], X[split_idx:], y[split_idx:]
 
@@ -85,8 +60,7 @@ def train(
         model.train()
         optimizer.zero_grad()
 
-        # Process the whole training set sequence-by-sequence (dataset is small
-        # enough that batching isn't required; see README for scaling notes).
+
         train_preds = torch.stack([model(seq) for seq in X_train_t]).squeeze()
         loss = loss_fn(train_preds, y_train_t)
         loss.backward()
@@ -144,8 +118,7 @@ def evaluate(model, X_val, y_val, device: str = "cpu"):
 
 
 def evaluate_naive_baseline(X_val, y_val, close_col_idx: int):
-    """Baseline: predict 'next close = last close in the input window'."""
-    baseline_preds = np.array([seq[-1, close_col_idx] for seq in X_val])  # last norm_close in each window
+    baseline_preds = np.array([seq[-1, close_col_idx] for seq in X_val])
     metrics = core.regression_metrics(y_val, baseline_preds)
     dir_acc = core.directional_accuracy(y_val, baseline_preds)
     metrics["directional_accuracy"] = dir_acc

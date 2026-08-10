@@ -4,7 +4,7 @@ Unit tests for lstm_core.py.
 Run with:
     pytest tests/
 
-These tests use synthetic OHLC data (no network access, no MT5, no
+These tests use synthetic OHLC data (no network access, no
 pretrained weights required) so they run anywhere, including CI.
 """
 
