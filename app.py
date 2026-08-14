@@ -9,6 +9,7 @@ from flask import Flask, jsonify, redirect, render_template_string, url_for
 
 import lstm_core as core
 import xgb_core
+import ridge_core
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,6 +22,7 @@ app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "lstm_model.pth")
 XGBOOST_MODEL_PATH = os.path.join(BASE_DIR, xgb_core.XGBOOST_MODEL_FILENAME)
+RIDGE_MODEL_PATH = os.path.join(BASE_DIR, ridge_core.RIDGE_MODEL_FILENAME)
 RESULTS_PATH = os.path.join(BASE_DIR, "prediction_results.json")
 
 
@@ -28,6 +30,7 @@ REFRESH_INTERVAL_SECONDS = int(os.environ.get("REFRESH_INTERVAL_SECONDS", "60"))
 
 _model = None
 _xgboost_model = None
+_ridge_model = None
 
 
 def get_model():
@@ -42,6 +45,13 @@ def get_xgboost_model():
     if _xgboost_model is None and os.path.exists(XGBOOST_MODEL_PATH):
         _xgboost_model = xgb_core.load_xgboost_model(XGBOOST_MODEL_PATH)
     return _xgboost_model
+
+
+def get_ridge_model():
+    global _ridge_model
+    if _ridge_model is None and os.path.exists(RIDGE_MODEL_PATH):
+        _ridge_model = ridge_core.load_ridge_model(RIDGE_MODEL_PATH)
+    return _ridge_model
 
 
 def _build_result_entry(run, data_source):
@@ -80,12 +90,21 @@ def run_prediction_job():
                 xgb_run = xgb_core.run_xgboost_backtest_and_forecast(xgboost_model, feature_frame)
                 results["xgboost"] = _build_result_entry(xgb_run, data_source)
             except Exception:
-
-
                 logger.exception("XGBoost prediction failed this cycle; LSTM result is unaffected.")
         else:
             logger.info("No xgboost_model.json found — skipping XGBoost prediction "
                          "(run train_xgboost_model.py to enable the comparison toggle).")
+
+        ridge_model = get_ridge_model()
+        if ridge_model is not None:
+            try:
+                ridge_run = ridge_core.run_ridge_backtest_and_forecast(ridge_model, feature_frame)
+                results["ridge"] = _build_result_entry(ridge_run, data_source)
+            except Exception:
+                logger.exception("Ridge prediction failed this cycle; other results are unaffected.")
+        else:
+            logger.info("No ridge_model.json found — skipping Ridge prediction "
+                         "(run train_ridge_model.py to enable the comparison toggle).")
 
         with open(RESULTS_PATH, "w") as f:
             json.dump(results, f)
@@ -329,6 +348,9 @@ PAGE_TEMPLATE = """
       <button type="button" class="model-tab{{ ' disabled' if not xgboost_available else '' }}" data-model="xgboost" onclick="showModel('xgboost')">
         XGBoost{{ '' if xgboost_available else ' (not trained yet)' }}
       </button>
+      <button type="button" class="model-tab{{ ' disabled' if not ridge_available else '' }}" data-model="ridge" onclick="showModel('ridge')">
+        Ridge{{ '' if ridge_available else ' (not trained yet)' }}
+      </button>
     </div>
 
     {% for m in models %}
@@ -421,13 +443,16 @@ def render_page(error=None):
             PAGE_TEMPLATE,
             error=error or "No predictions generated yet. Click Refresh Now or wait for the first scheduled run.",
             source_label="no data", models=[], generated_at="",
-            refresh_interval=REFRESH_INTERVAL_SECONDS, xgboost_available=False,
+            refresh_interval=REFRESH_INTERVAL_SECONDS, xgboost_available=False, ridge_available=False,
         )
 
     xgboost_available = "xgboost" in all_results
+    ridge_available = "ridge" in all_results
     models = [_build_view_context("lstm", all_results["lstm"], load_plotlyjs=True)]
     if xgboost_available:
         models.append(_build_view_context("xgboost", all_results["xgboost"], load_plotlyjs=False))
+    if ridge_available:
+        models.append(_build_view_context("ridge", all_results["ridge"], load_plotlyjs=False))
 
     source = all_results["lstm"].get("data_source", "")
     return render_template_string(
@@ -438,6 +463,7 @@ def render_page(error=None):
         generated_at=all_results.get("generated_at", ""),
         refresh_interval=REFRESH_INTERVAL_SECONDS,
         xgboost_available=xgboost_available,
+        ridge_available=ridge_available,
     )
 
 

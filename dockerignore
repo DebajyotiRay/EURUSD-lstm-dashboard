@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.git/
+.gitignore
+tests/
+docs/
+.pytest_cache/
+prediction_results.json
+training_report.json
+xgboost_training_report.json
+ridge_training_report.json
+loss_curve.png
+.venv/
+venv/
+*.md

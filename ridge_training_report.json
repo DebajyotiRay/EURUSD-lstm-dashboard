@@ -1,0 +1,88 @@
+{
+  "selected_alpha": 10.0,
+  "alpha_search": [
+    {
+      "alpha": 0.1,
+      "train_metrics": {
+        "mae": 0.09893736516432058,
+        "rmse": 0.14985118500527972,
+        "directional_accuracy": 0.62991704575863
+      },
+      "val_metrics": {
+        "mae": 0.12804133905066756,
+        "rmse": 0.19071497450619743,
+        "directional_accuracy": 0.6105769230769231
+      },
+      "train_val_mae_gap": 0.029103973886346973
+    },
+    {
+      "alpha": 1.0,
+      "train_metrics": {
+        "mae": 0.09884915925674807,
+        "rmse": 0.14987772939074767,
+        "directional_accuracy": 0.6272411024886272
+      },
+      "val_metrics": {
+        "mae": 0.1272963904870844,
+        "rmse": 0.1896434030312731,
+        "directional_accuracy": 0.6153846153846154
+      },
+      "train_val_mae_gap": 0.028447231230336337
+    },
+    {
+      "alpha": 10.0,
+      "train_metrics": {
+        "mae": 0.09923029742015822,
+        "rmse": 0.1507399519292956,
+        "directional_accuracy": 0.6245651592186245
+      },
+      "val_metrics": {
+        "mae": 0.12428499262728311,
+        "rmse": 0.18494549198990498,
+        "directional_accuracy": 0.6201923076923077
+      },
+      "train_val_mae_gap": 0.02505469520712489
+    },
+    {
+      "alpha": 100.0,
+      "train_metrics": {
+        "mae": 0.10664506506696358,
+        "rmse": 0.15749042348521833,
+        "directional_accuracy": 0.5908482740165909
+      },
+      "val_metrics": {
+        "mae": 0.12507643822719516,
+        "rmse": 0.18221330539414266,
+        "directional_accuracy": 0.6282051282051282
+      },
+      "train_val_mae_gap": 0.01843137316023158
+    },
+    {
+      "alpha": 1000.0,
+      "train_metrics": {
+        "mae": 0.1333072430397178,
+        "rmse": 0.18142031815778784,
+        "directional_accuracy": 0.5804120952635804
+      },
+      "val_metrics": {
+        "mae": 0.14531781375365316,
+        "rmse": 0.19675167891110756,
+        "directional_accuracy": 0.6217948717948718
+      },
+      "train_val_mae_gap": 0.012010570713935353
+    }
+  ],
+  "n_train": 4708,
+  "n_val": 831,
+  "train_metrics": {
+    "mae": 0.09923029742015822,
+    "rmse": 0.1507399519292956,
+    "directional_accuracy": 0.6245651592186245
+  },
+  "val_metrics": {
+    "mae": 0.12428499262728311,
+    "rmse": 0.18494549198990498,
+    "directional_accuracy": 0.6201923076923077
+  },
+  "train_val_mae_gap": 0.02505469520712489
+}
